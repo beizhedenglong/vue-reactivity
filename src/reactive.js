@@ -3,6 +3,7 @@
 const targetMap = new Map()
 const effectStack = []
 
+const isPlainObj = x => typeof x === 'object' && x !== null
 
 const reactive = (target = {}) => {
   const observed = new Proxy(target, {
@@ -19,6 +20,9 @@ const reactive = (target = {}) => {
         dep.add(effect)
       }
       const res = Reflect.get(obj, key, receiver)
+      if (isPlainObj(res)) {
+        return reactive(res)
+      }
       return res
     },
     set: (obj, key, value, receiver) => {
@@ -49,13 +53,15 @@ const effect = (fn) => {
 const person = reactive({
   age: 123,
   name: 'Victor',
+  obj: {
+    count: 1,
+  },
 })
 
 const p = document.createElement('p')
 document.body.appendChild(p)
 effect(() => {
-  console.log(person)
-  p.innerHTML = person.age + person.name
+  p.innerHTML = person.obj.count
 })
 
 // effect(() => {
@@ -65,4 +71,5 @@ effect(() => {
 setInterval(() => {
   person.age += 1
   person.name += 'r'
+  person.obj.count += 1
 }, 1000)
