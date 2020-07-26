@@ -1,0 +1,11 @@
+{
+  "name": "vue-reactivity",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^7.4.0",
+    "eslint-plugin-zero": "^0.0.9",
+    "parcel-bundler": "^1.12.4"
+  }
+}
