@@ -5,7 +5,7 @@ const effectStack = []
 
 const isPlainObj = x => typeof x === 'object' && x !== null
 
-const reactive = (target = {}) => {
+export const reactive = (target = {}) => {
   const observed = new Proxy(target, {
     get: (obj, key, receiver) => {
       const effect = effectStack[effectStack.length - 1]
@@ -38,7 +38,7 @@ const reactive = (target = {}) => {
   return observed
 }
 
-const effect = (fn) => {
+export const effect = (fn) => {
   const _effect = (...args) => {
     if (effectStack.indexOf(fn) === -1) {
       effectStack.push(_effect)
@@ -50,26 +50,3 @@ const effect = (fn) => {
   return _effect
 }
 
-const person = reactive({
-  age: 123,
-  name: 'Victor',
-  obj: {
-    count: 1,
-  },
-})
-
-const p = document.createElement('p')
-document.body.appendChild(p)
-effect(() => {
-  p.innerHTML = person.obj.count
-})
-
-// effect(() => {
-//   console.log(person.name)
-// })
-
-setInterval(() => {
-  person.age += 1
-  person.name += 'r'
-  person.obj.count += 1
-}, 1000)
