@@ -7,7 +7,34 @@
 
 
 ## `@vue/reactivity` 的使用
+`@vue/reactivity` 这个库是不依赖 Vue 的，可以单独使用，你可以在 React 以及其他 JS 项目中使用这个库。下面我们来看一个🌰：
+```js
+import { reactive, effect } from '@vue/reactivity'
 
+const person = reactive({
+  age: 123,
+  name: 'Victor',
+})
+
+const p = document.createElement('p')
+document.body.appendChild(p)
+
+const ageEffect = effect(() => {
+  p.innerHTML = person.age
+})
+
+const nameEffect = effect(() => {
+  console.log(person.name)
+})
+
+setInterval(() => {
+  person.age += 1
+}, 1000)
+
+```
+我们这里主要看两个API：effect 和 reactive。从上面的例子我们可以看到这两个 API 的一些行为，reactive 接收一个对象会返回一个响应的像。ageEffect 和 nameEffect 会被立即执行一次，然后每当我们改变 age 时，ageEffect 就会被执行，而 nameEffect 不会被执行。这是我们从上面的例子中观察到的一些行为。大家可以自己先想一下我们通过什么样的办法可以实现上面的效果。
+
+在了解 @vue/reactivity 的实现方式之前，我们需要先了解一下 Proxy API, @vue/reactivity 依赖 Proxy 提供的一些特性来实现上面我们观察到的效果。
 
 
 ## Proxy

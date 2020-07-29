@@ -1,25 +1,21 @@
-import {reactive, effect} from "../reactive"
+import { reactive, effect } from '@vue/reactivity'
 
 const person = reactive({
   age: 123,
   name: 'Victor',
-  obj: {
-    count: 1,
-  },
 })
 
 const p = document.createElement('p')
 document.body.appendChild(p)
-effect(() => {
-  p.innerHTML = person.obj.count
+
+const ageEffect = effect(() => {
+  p.innerHTML = person.age
 })
 
-// effect(() => {
-//   console.log(person.name)
-// })
+const nameEffect = effect(() => {
+  console.log(person.name)
+})
 
 setInterval(() => {
   person.age += 1
-  person.name += 'r'
-  person.obj.count += 1
 }, 1000)

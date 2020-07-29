@@ -49,4 +49,3 @@ export const effect = (fn) => {
   _effect()
   return _effect
 }
-
