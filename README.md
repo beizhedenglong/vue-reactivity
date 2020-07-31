@@ -38,7 +38,38 @@ setInterval(() => {
 
 
 ## Proxy
+Proxy 可以为其他对对象创建代理，我们读取或者更新该对象的某些属性时，我们通过 Proxy 来实现一些自定义行为。比如我们可以在读取或者更新属性时打印相应的值:
+```js
+const person = new Proxy({
+  name: 'Victor', age: 1,
+}, {
+  get(target, key, receiver) {
+    const value = Reflect.get(target, key, receiver)
+    console.log('get', key, value)
+    return value
+  },
+  set(target, key, value, receiver) {
+    const res = Reflect.set(target, key, value, receiver)
+    console.log('set', key, value)
+    return res
+  },
+})
 
+
+person.age = person.age + 1
+```
+在上面的例子中会分别触发一次 age 属性的 set 和 get 代理，打印相应的信息。
+
+有了 Proxy 的前置知识以后，我们就可以一起动手来实现一个响应式库。
+
+## 实现一个简单的响应式库
+我们这里主要是实现 reactive 和 effect 这两个 API，我们先来看看我们的输入，确定怎样去存储我们的输入信息。 reactive 一个 target, 也就是我们的数据，effect 输入的一个函数fn，当 fn 里使用的某些 target 属性更新时，fn 就会被调用。我们这里可以想到 effect 的输入 fn 以及 reactive 的输入 target 应该是通过某种方式联系起来的，每当 target 的 key 更新时，我去执行与这些 key 相关的 effect 函数就可以了。我们可以用一个 Map 来存储这些信息：
+```js
+const depsMap = {
+  age: new Set([ageEffect])
+}
+
+```
 
 ## 其他
 增删 数组 edge cases 错误处理，这里就牵扯到很多细节问题了，大家自己去翻它的源码吧。

@@ -12,6 +12,7 @@ const ageEffect = effect(() => {
   p.innerHTML = person.age
 })
 
+
 const nameEffect = effect(() => {
   console.log(person.name)
 })
