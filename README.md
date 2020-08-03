@@ -63,13 +63,80 @@ person.age = person.age + 1
 有了 Proxy 的前置知识以后，我们就可以一起动手来实现一个响应式库。
 
 ## 实现一个简单的响应式库
-我们这里主要是实现 reactive 和 effect 这两个 API，我们先来看看我们的输入，确定怎样去存储我们的输入信息。 reactive 一个 target, 也就是我们的数据，effect 输入的一个函数fn，当 fn 里使用的某些 target 属性更新时，fn 就会被调用。我们这里可以想到 effect 的输入 fn 以及 reactive 的输入 target 应该是通过某种方式联系起来的，每当 target 的 key 更新时，我去执行与这些 key 相关的 effect 函数就可以了。我们可以用一个 Map 来存储这些信息：
+我们这里主要是实现 reactive 和 effect 这两个 API，我们先来看看我们的输入，确定怎样去存储我们的输入信息。 reactive 一个 target, 也就是我们的数据，effect 输入一个函数fn，当 fn 里使用的某些 target 属性更新时，fn 就会被调用。我们这里可以想到 effect 的输入 fn 以及 reactive 的输入 target 应该是通过某种方式联系起来的，每当 target 的 key 更新时，我去执行与这些 key 相关的 effect 函数就可以了。我们可以用一个 Map 来存储这些信息：
 ```js
-const depsMap = {
-  age: new Set([ageEffect])
+depsMap = Map {
+  age => Set {ageEffect, ...},
+  name => Set {nameEffect, ...}
+}
+```
+我们这里可以考略下为什么用 set 去存储 effect 函数，set 查询的时间复杂是 log(n)，像数组的话查询的时间复杂度是 O(n)，在做框架/库的时候，我们需要考虑性能，考虑一些极端输入。
+
+现在我们有了 depsMap， 那么 depsMap 和我们的 target 是什么关系呢？我们也可以用一个 Map, 把 target 和它对应的 depsMap 存起来。为了更高效的利用内存，我们这里可以用 WeakMap:
+```js
+  targetMap = WeakMap {
+    person => Map {
+      age => Set {ageEffect, ...},
+      name => Set {nameEffect, ...}
+    }
+  }
+```
+好了，我们现在可以用一个全局的 targetMap 来存储所有的输入的target，以及 target 的每个 key 所对应的 effect 函数。知道了这些以后，结合 proxy 我们来看看这些信息是如何被收集起来的。
+
+当调用 reactive(target) 时, 我们会做一些初始化操作，在 target 上设置 get/set 等的 proxy，把 target 初始化信息存到 targetMap 里，调用 effect 时，effect 里的函数 fn 会立即调用一次，这样 fn 里用到了 target 里的某些 key 话，就会触发 target 的 get proxy, 我们就可以把 effect 保存到 depsMap 相应的 key 里。
+具体的我们来看看代码：
+
+```js
+
+const targetMap = new Map()
+const effectStack = []
+
+const isPlainObj = x => typeof x === 'object' && x !== null
+
+export const reactive = (target = {}) => {
+  const observed = new Proxy(target, {
+    get: (obj, key, receiver) => {
+      const effect = effectStack[effectStack.length - 1] // active effect
+      const depsMap = targetMap.get(obj) || new Map()
+
+      targetMap.set(target, depsMap)
+      const dep = depsMap.get(key) || new Set([])
+
+      depsMap.set(key, dep)
+
+      if (effect && !dep.has(effect)) {
+        dep.add(effect)
+      }
+      const res = Reflect.get(obj, key, receiver)
+      if (isPlainObj(res)) {
+        return reactive(res)
+      }
+      return res
+    },
+    set: (obj, key, value, receiver) => {
+      const res = Reflect.set(obj, key, value, receiver)
+      const depsMap = targetMap.get(obj)
+      if (depsMap) {
+        const dep = depsMap.get(key)
+        dep.forEach(f => f())
+      }
+      return res
+    },
+  })
+  return observed
+}
+
+export const effect = (fn) => {
+  const _effect = (...args) => {
+    if (effectStack.indexOf(fn) === -1) {
+      effectStack.push(_effect)
+      fn(...args)
+      effectStack.pop()
+    }
+  }
+  _effect()
+  return _effect
 }
 
 ```
-
-## 其他
-增删 数组 edge cases 错误处理，这里就牵扯到很多细节问题了，大家自己去翻它的源码吧。
+到这里我们明白了 @vue/reactivity 的基本原理，实现了一个简单的响应式库。有些情况比如增删 key、输入是数组或者其它数据结构，我们这里没做处理，大家可以去看源码，都是一些细节问题了。感兴趣的同学还可以和 Redux、Mobx 等库的原理和实现对比下，可以学到一些不同的设计理念。
