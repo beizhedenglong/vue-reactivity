@@ -40,7 +40,7 @@ export const reactive = (target = {}) => {
 
 export const effect = (fn) => {
   const _effect = (...args) => {
-    if (effectStack.indexOf(fn) === -1) {
+    if (effectStack.indexOf(_effect) === -1) {
       effectStack.push(_effect)
       fn(...args)
       effectStack.pop()

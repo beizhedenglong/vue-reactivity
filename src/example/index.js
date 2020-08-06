@@ -1,4 +1,4 @@
-import { reactive, effect } from '@vue/reactivity'
+import { reactive, effect } from '../reactive'
 
 const person = reactive({
   age: 123,
